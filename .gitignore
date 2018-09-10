@@ -1,0 +1,8 @@
+cocoapi/
+coco/
+__pycache__/
+intermediate/
+udac/
+cocoapi-master.zip
+vocab.pkl
+models/
