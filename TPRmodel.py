@@ -50,25 +50,25 @@ class DecoderRNN(nn.Module):
         #=====================================================
         #start word
         lastword = self.embed_captions(torch.tensor((torch.zeros(1)), dtype=torch.long).cuda())
-        
         lastword = lastword.view(1,1,lastword.shape[len(lastword.shape)-1])
-
 
         wordstart = lastword.repeat(self.batch_size,1,1)#1,x,1
         p0zeroes = torch.zeros(self.batch_size,1,self.hidden_size).cuda()#1,x,x
-        fSIn = torch.cat((p0zeroes, wordstart),dim = 2)
         sStartHidden = (self.SzeroLinear(features)).view(self.num_layers,self.batch_size,self.hidden_size)#
-        fUin = torch.cat((p0zeroes, wordstart),dim = 2)
-        print(sStartHidden.shape)
-        lstSOut,self.hidden = self.lstmS(fSIn,sStartHidden)
+
+        fSIn = torch.cat((p0zeroes, wordstart),dim = 2)
+        fUin = torch.cat((sStartHidden.view(self.batch_size ,self.num_layers,self.hidden_size), wordstart),dim = 2)
+
+        #cudnn fail here
+        lstSOut,self.hidden = self.lstmS(fSIn)#,( torch.zeros(sStartHidden.shape),sStartHidden))
         lstUOut,self.hiddenU = self.lstmU(fUin)
 
         #temp
-        lstmS_out.append(wordstart)
-
         lstmS_out = []
+        lstmS_out.append(wordstart)
         lstmU_out = []
-
+        lstmS_out.append(lstSOut)
+        lstmU_out.append(lstUOut)
         # #first attempt at first go over
         # lstUOut =  torch.zeros(1,self.batch_size,self.hidden_size).cuda()
         # lstmS_out = []
