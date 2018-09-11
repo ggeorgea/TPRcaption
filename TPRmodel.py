@@ -60,7 +60,7 @@ class DecoderRNN(nn.Module):
         fUin = torch.cat((sStartHidden.view(self.batch_size ,self.num_layers,self.hidden_size), wordstart),dim = 2)
 
         #cudnn fail here
-        lstSOut,self.hidden = self.lstmS(fSIn)#,( torch.zeros(sStartHidden.shape),sStartHidden))
+        lstSOut,self.hidden = self.lstmS(fSIn,( torch.zeros(sStartHidden.shape),sStartHidden))
         lstUOut,self.hiddenU = self.lstmU(fUin)
 
         #temp
@@ -91,32 +91,33 @@ class DecoderRNN(nn.Module):
 
 
         for inty in range(1,captions.size()[1]):
+            
             #this should be the * of lstuout and this
-            finalO  = lstSOut
-            inp = finalO
+            # finalO  = lstSOut
+            # inp = finalO
             #inputS[inty]
-           
-            sIn = torch.cat((inp.view(-1,inp.size()[0],inp.size()[1]),lstUOut ),dim = 2)
-            lstSOut,self.hidden = self.lstmS(sIn,self.hidden)
-            lstmS_out.append(lstSOut)
+            #sIn = torch.cat((inp.view(-1,inp.size()[0],inp.size()[1]),lstUOut ),dim = 2)
+            #uIn = torch.cat((inp.view(-1,inp.size()[0],inp.size()[1]),lstSOut ),dim = 2)
+            #temp \/\/
+            xprev = lstSOut
 
-            uIn = torch.cat((inp.view(-1,inp.size()[0],inp.size()[1]),lstSOut ),dim = 2)
-            lstUOut,self.hiddenU = self.lstmU(uIn,self.hiddenU)
+            lstSOut,self.hidden = self.lstmS(torch.cat((xprev,self.hiddenU[1]), dim = 2),self.hidden)
+            lstUOut,self.hiddenU = self.lstmU(torch.cat((xprevself.hidden[1]),dim = 2),self.hiddenU)
+            lstmS_out.append(lstSOut)
             lstmU_out.append(lstUOut)
+
+
+
 
         lstmS_out = torch.stack(lstmS_out)
         lstmS_out = lstmS_out.view(inputS.size()[0],inputS.size()[1],self.hidden_size)
         lstmU_out = torch.stack(lstmU_out)
         lstmU_out = lstmU_out.view(inputS.size()[0],inputS.size()[1],self.hidden_size)
 
-
-
         #======================================================
-        lstmS_out = self.drop(lstmS_out)
+        #####!!!!lstmS_out = self.drop(lstmS_out)
         lstmS_out = lstmS_out[:,:-1,:]
         tag_outputs = self.fc(lstmS_out)
-
-
         return tag_outputs
 
     def sample(self, inputs, states=None, max_len=20):
