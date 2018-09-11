@@ -37,6 +37,7 @@ class DecoderRNN(nn.Module):
         self.SzeroLinear = nn.Linear(embed_size,hidden_size)
     
     def forward(self, features, captions):
+        #TODO ADD DSTARTWORD PROPERLY
         self.batch_size = features.shape[0]
         #captions are batch, length
         #features are batch, length
@@ -58,16 +59,23 @@ class DecoderRNN(nn.Module):
 
         fSIn = torch.cat((p0zeroes, wordstart),dim = 2)
         fUin = torch.cat((sStartHidden.view(self.batch_size ,self.num_layers,self.hidden_size), wordstart),dim = 2)
-
+        #CUDA EXEC FAILED ERRORS CAN BE NO .CUDA
         #cudnn fail here
-        lstSOut,self.hidden = self.lstmS(fSIn,( torch.zeros(sStartHidden.shape),sStartHidden))
+        print(fSIn.shape)
+        lstSOut,self.hidden = self.lstmS(fSIn,( torch.zeros(sStartHidden.shape).cuda(),sStartHidden))
         lstUOut,self.hiddenU = self.lstmU(fUin)
 
         #temp
+
+        # firstout =wordstart#self.fc(wordstart)
+
+
         lstmS_out = []
-        lstmS_out.append(wordstart)
-        lstmU_out = []
+
+        #lstmS_out.append(wordstart)
         lstmS_out.append(lstSOut)
+
+        lstmU_out = []
         lstmU_out.append(lstUOut)
         # #first attempt at first go over
         # lstUOut =  torch.zeros(1,self.batch_size,self.hidden_size).cuda()
@@ -87,8 +95,17 @@ class DecoderRNN(nn.Module):
         # fUin = fSin # should change ;ater
         # lstUOut,self.hiddenU = self.lstmU(fUin)
         # lstmU_out.append(lstUOut)
+        
+        indices = torch.argmax(self.fc(lstSOut),2)
+        xprev = self.embed_captions(indices.type(torch.LongTensor).cuda())  
 
-
+        #xprev = (self.embed_captions(torch.tensor(self.fc(lstSOut), dtype=torch.long).cuda()))
+     
+        # print(xprev.shape)
+        # print(self.fc(lstSOut).shape)
+        # print(lstSOut.shape)
+        # example lastword.view(1,1,lastword.shape[len(lastword.shape)-1])
+        # example lastword = self.embed_captions(torch.tensor((torch.zeros(1)), dtype=torch.long).cuda())
 
         for inty in range(1,captions.size()[1]):
             
@@ -99,10 +116,19 @@ class DecoderRNN(nn.Module):
             #sIn = torch.cat((inp.view(-1,inp.size()[0],inp.size()[1]),lstUOut ),dim = 2)
             #uIn = torch.cat((inp.view(-1,inp.size()[0],inp.size()[1]),lstSOut ),dim = 2)
             #temp \/\/
-            xprev = lstSOut
+            sInStep = torch.cat((self.hiddenU[1],xprev), dim = 2)
 
-            lstSOut,self.hidden = self.lstmS(torch.cat((xprev,self.hiddenU[1]), dim = 2),self.hidden)
-            lstUOut,self.hiddenU = self.lstmU(torch.cat((xprevself.hidden[1]),dim = 2),self.hiddenU)
+            lstSOut,self.hidden = self.lstmS(sInStep,self.hidden)
+            lstUOut,self.hiddenU = self.lstmU(torch.cat((self.hidden[1],xprev),dim = 2),self.hiddenU)
+            
+            indices = torch.argmax(self.fc(lstSOut),2)
+            xprev = self.embed_captions(indices.type(torch.LongTensor).cuda()) 
+
+            #xprev = (self.embed_captions(torch.tensor(self.fc(lstSOut), dtype=torch.long).cuda())).view(self.batch_size,1,-1)
+
+
+
+            # xprev = self.embed_captions(self.fc(lstSOut))
             lstmS_out.append(lstSOut)
             lstmU_out.append(lstUOut)
 
@@ -110,13 +136,13 @@ class DecoderRNN(nn.Module):
 
 
         lstmS_out = torch.stack(lstmS_out)
-        lstmS_out = lstmS_out.view(inputS.size()[0],inputS.size()[1],self.hidden_size)
-        lstmU_out = torch.stack(lstmU_out)
-        lstmU_out = lstmU_out.view(inputS.size()[0],inputS.size()[1],self.hidden_size)
+        # lstmS_out = lstmS_out.view(inputS.size()[0],inputS.size()[1],self.hidden_size)
+        # lstmU_out = torch.stack(lstmU_out)
+        # lstmU_out = lstmU_out.view(inputS.size()[0],inputS.size()[1],self.hidden_size)
 
         #======================================================
         #####!!!!lstmS_out = self.drop(lstmS_out)
-        lstmS_out = lstmS_out[:,:-1,:]
+        ####lstmS_out = lstmS_out[:,:-1,:]
         tag_outputs = self.fc(lstmS_out)
         return tag_outputs
 
