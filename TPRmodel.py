@@ -61,7 +61,7 @@ class DecoderRNN(nn.Module):
         fUin = torch.cat((sStartHidden.view(self.batch_size ,self.num_layers,self.hidden_size), wordstart),dim = 2)
         #CUDA EXEC FAILED ERRORS CAN BE NO .CUDA
         #cudnn fail here
-        print(fSIn.shape)
+        #print(fSIn.shape)
         lstSOut,self.hidden = self.lstmS(fSIn,( torch.zeros(sStartHidden.shape).cuda(),sStartHidden))
         lstUOut,self.hiddenU = self.lstmU(fUin)
 
@@ -95,10 +95,12 @@ class DecoderRNN(nn.Module):
         # fUin = fSin # should change ;ater
         # lstUOut,self.hiddenU = self.lstmU(fUin)
         # lstmU_out.append(lstUOut)
-        
+        # print(lstSOut.shape)
         indices = torch.argmax(self.fc(lstSOut),2)
         xprev = self.embed_captions(indices.type(torch.LongTensor).cuda())  
-
+        # print(indices.shape)
+        # print(xprev.shape)
+        # print(self.hiddenU[1].shape)
         #xprev = (self.embed_captions(torch.tensor(self.fc(lstSOut), dtype=torch.long).cuda()))
      
         # print(xprev.shape)
@@ -116,12 +118,15 @@ class DecoderRNN(nn.Module):
             #sIn = torch.cat((inp.view(-1,inp.size()[0],inp.size()[1]),lstUOut ),dim = 2)
             #uIn = torch.cat((inp.view(-1,inp.size()[0],inp.size()[1]),lstSOut ),dim = 2)
             #temp \/\/
-            sInStep = torch.cat((self.hiddenU[1],xprev), dim = 2)
-
+            sInStep = torch.cat((self.hiddenU[1].view(self.batch_size,1,-1),xprev), dim = 2)
+            uInStep = torch.cat((self.hidden[1].view(self.batch_size,1,-1),xprev),dim = 2)
             lstSOut,self.hidden = self.lstmS(sInStep,self.hidden)
-            lstUOut,self.hiddenU = self.lstmU(torch.cat((self.hidden[1],xprev),dim = 2),self.hiddenU)
+            lstUOut,self.hiddenU = self.lstmU(uInStep,self.hiddenU)
             
-            indices = torch.argmax(self.fc(lstSOut),2)
+
+            multOut = lstSOut #  torch.bmm(lstSOut,lstUOut) 
+            print(multOut.shape,"!")
+            indices = torch.argmax(self.fc(multOut),2)
             xprev = self.embed_captions(indices.type(torch.LongTensor).cuda()) 
 
             #xprev = (self.embed_captions(torch.tensor(self.fc(lstSOut), dtype=torch.long).cuda())).view(self.batch_size,1,-1)
