@@ -15,7 +15,7 @@ def train():
     transform_train = transforms.Compose([ transforms.Resize(256), transforms.RandomCrop(224),                      
         transforms.RandomHorizontalFlip(), transforms.ToTensor(), 
         transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225))])
-    batch_size = 50     #100         # 300
+    batch_size = 30     #100         # 300
     vocab_threshold = 5       # 5
     img_folder = './cocoapi/images/train2014/'
     annotations_file = './cocoapi/annotations/captions_train2014.json'
