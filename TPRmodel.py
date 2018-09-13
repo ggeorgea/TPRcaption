@@ -124,7 +124,21 @@ class DecoderRNN(nn.Module):
             lstUOut,self.hiddenU = self.lstmU(uInStep,self.hiddenU)
             
 
-            multOut = lstSOut #  torch.bmm(lstSOut,lstUOut) 
+            multOut = lstSOut #  
+
+            import torch
+# def kronecker(matrix1, matrix2):
+#     return torch.ger(matrix1.view(-1), matrix2.view(-1)).reshape(*(matrix1.size() + matrix2.size())).permute([0, 2, 1, 3]).reshape(matrix1.size(0) * matrix2.size(0), matrix1.size(1) * matrix2.size(1))
+# m1 = torch.eye(2,2)
+# m2 = torch.randn(2,2)
+# print(m1)
+# print(m2)
+# print(kronecker(m1,m2))
+            
+
+            #TODO CURRENT IS MAKE THIS MATRIC MULTIPLY WORK PROPA
+            #torch.bmm(lstSOut.view(self.batch_size),lstUOut.view(self.batch_size)) 
+            
             print(multOut.shape,"!")
             indices = torch.argmax(self.fc(multOut),2)
             xprev = self.embed_captions(indices.type(torch.LongTensor).cuda()) 
