@@ -123,10 +123,15 @@ class DecoderRNN(nn.Module):
             lstSOut,self.hidden = self.lstmS(sInStep,self.hidden)
             lstUOut,self.hiddenU = self.lstmU(uInStep,self.hiddenU)
             
-
+            matrix2 = lstSOut
+            matrix1 = torch.eye(matrix2.shape[1],matrix2.shape[2]).view(1,matrix2.shape[1],matrix2.shape[2]).repeat(matrix2.shape[0],1,1)
+            blockDiagonal = torch.bmm(matrix1.view(matrix1.shape[0],-1,1),matrix2.view(matrix2.shape[0],1,-1)).view(matrix1.shape[0],*(matrix1[0].size()+matrix2[0].size())).permute([0,1,3,2,4]).reshape(matrix1.size(0),matrix1.size(1) * matrix2.size(1), matrix1.size(2) * matrix2.size(2))
+            f = torch.bmm(lstUOut,f)
+            print(f.shape)
+            return 
             multOut = lstSOut #  
 
-            import torch
+#            import torch
 # def kronecker(matrix1, matrix2):
 #     return torch.ger(matrix1.view(-1), matrix2.view(-1)).reshape(*(matrix1.size() + matrix2.size())).permute([0, 2, 1, 3]).reshape(matrix1.size(0) * matrix2.size(0), matrix1.size(1) * matrix2.size(1))
 # m1 = torch.eye(2,2)
