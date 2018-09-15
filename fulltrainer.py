@@ -34,6 +34,7 @@ def train():
         batch_size=dataset.batch_size,
         drop_last=False))
     vocab_size = len(data_loader.dataset.vocab)
+    print("VOCABSIZE:", vocab_size)
     encoder = EncoderCNN()
     decoder = DecoderRNN(vocab_size)
     # encoder_file = "locencoder-1.pkl" 
@@ -45,7 +46,9 @@ def train():
     decoder.to(device)
     criterion = nn.CrossEntropyLoss().cuda() if torch.cuda.is_available() else nn.CrossEntropyLoss()
     params = list(decoder.parameters()) + list(encoder.embed.parameters())
-    optimizer =     opt = torch.optim.Adam(params = params,lr=0.001)
+    #optimizer =     opt = torch.optim.Adam(params = params,lr=0.001)
+    #rmsprop?
+    optimizer =     opt = torch.optim.SGD(params = params,lr=0.1,momentum = 0.9)
     total_step = math.ceil(len(data_loader.dataset.caption_lengths) / data_loader.batch_sampler.batch_size)
     for epoch in range(1, num_epochs+1):
         for i_step in range(1, total_step+1):        
